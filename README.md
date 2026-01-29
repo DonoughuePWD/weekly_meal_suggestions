@@ -20,7 +20,7 @@ The Python script:
 
 FYI:
 
-Secrets (email password, OpenAI API key) are provided via environment variables so they are not in the repo.
+Secrets (email password, OpenAI API key) are provided via environment variables so they are not in the repo. You'll need to set up a .cmd file with global variables (e.g. your email, recipient's email, OpenAI API key etc).
 
 
 
