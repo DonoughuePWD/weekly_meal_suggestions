@@ -1,29 +1,25 @@
 #!/usr/bin/env python3
 """
-Weekly dinner suggestions (LLM-powered) + email sender.
+Weekly dinner suggestions + email sender.
 
 What it does
 - Takes a list of recipe links (URLs) you curate (recipes.txt).
-- Sends those links (plus scraped page titles) to an LLM to propose:
-  1) Seven *suggestions* for dinners (using only the provided links)
-  2) A "things we'd need to have" list (non-staples only; no quantities)
-- Emails the result once per week (schedule externally via Windows Task Scheduler).
-
-OpenAI API (Responses API)
-- POST https://api.openai.com/v1/responses
-- Bearer auth with OPENAI_API_KEY
+- Sends those links (plus scraped page titles) to GPT2.5 
+- Seven suggestions for dinners (using only the provided links)
+- "things we'd need to have" list (non-staples only)
+- Emails the result once per week (I'm scheduling externally via Windows Task Scheduler; you might use another method).
 
 Config (env vars)
-- OPENAI_API_KEY          (required)
+- OPENAI_API_KEY          (required, easy to create one if you don't have one)
 - OPENAI_MODEL            (optional) default: gpt-5.2
 - EMAIL_USER              (required) SMTP username
-- EMAIL_PASS              (required) SMTP password / app password
+- EMAIL_PASS              (required) SMTP password / app password (you'll need to get an app password from Gmail)
 - EMAIL_TO                (required) recipient email
 - SMTP_HOST               (optional) default: smtp.gmail.com
 - SMTP_PORT               (optional) default: 587
 - EMAIL_SUBJECT_PREFIX    (optional) default: "Suggestions for things to eat this week"
 - MEALS_PER_WEEK          (optional) default: 7
-- RECIPES_FILE            (optional) path to text file with one URL per line.
+- RECIPES_FILE            (optional) path to text file with one URL per line. I've put mine here but feel free to change/add your own
                            default: recipes.txt beside this script.
 - INCLUDE_SWEETS          (optional) set to "1" to include dessert/sweet links. default: exclude.
 """
@@ -43,9 +39,7 @@ from urllib.parse import urlparse
 import requests
 from bs4 import BeautifulSoup
 
-# -------------------------- URL list + filtering
-
-
+# URL list + filtering
 DEFAULT_URLS: List[str] = [
     # Optional fallback list if you don't want to use recipes.txt.
 ]
@@ -58,16 +52,18 @@ DESSERT_KEYWORDS = {
     "chocolate", "nutella", "caramel", "smoothie",
 }
 
+# checks if the thing is a sweet treat or not (bool)
 def is_probably_sweet_url(url: str) -> bool:
     p = urlparse(url)
     hay = (p.path + " " + p.query).lower()
     return any(k in hay for k in DESSERT_KEYWORDS)
 
+# grabs URLs from the recipe file
 def load_recipe_urls() -> List[str]:
     recipes_file = os.getenv("RECIPES_FILE")
     if not recipes_file:
         recipes_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), "recipes.txt")
-
+# cleans them up and grabs each one
     urls: List[str] = []
     if os.path.exists(recipes_file):
         with open(recipes_file, "r", encoding="utf-8") as f:
@@ -81,11 +77,12 @@ def load_recipe_urls() -> List[str]:
 
     urls = [u.strip() for u in urls if u and u.strip().startswith("http")]
 
+  # drop sweet treats (or not)
     include_sweets = os.getenv("INCLUDE_SWEETS", "").strip() == "1"
     if not include_sweets:
         urls = [u for u in urls if not is_probably_sweet_url(u)]
 
-    # De-dupe preserving order
+    # De-dupe
     seen = set()
     out: List[str] = []
     for u in urls:
@@ -94,9 +91,7 @@ def load_recipe_urls() -> List[str]:
             seen.add(u)
     return out
 
-# ------------- Fetch page titles (helps the LLM)
-
-
+#  Fetch page titles (helps the model figure out what the thing is)
 @dataclass
 class LinkMeta:
     url: str
@@ -125,8 +120,8 @@ def build_link_metas(urls: List[str], max_to_fetch: int = 60) -> List[LinkMeta]:
         metas.append(LinkMeta(url=u, title=""))
     return metas
 
-# -------------------------- ----API call (using Open AI)
-
+# API call (using Open AI but you could change provider if you like)
+# you'll need to have your key in a .cdm file in your env for this to work
 def call_openai_suggestions(link_metas: List[LinkMeta], meals_per_week: int) -> str:
     api_key = os.getenv("OPENAI_API_KEY", "").strip()
     if not api_key:
@@ -141,6 +136,7 @@ def call_openai_suggestions(link_metas: List[LinkMeta], meals_per_week: int) -> 
             link_lines.append(f"- {m.url}")
     links_block = "\n".join(link_lines)
 
+  # feel free to add other stapes you want it to avoid here
     staples = [
         "salt", "pepper", "oil", "olive oil", "vegetable oil",
         "butter", "flour", "sugar", "rice", "pasta", "noodles",
@@ -217,9 +213,8 @@ Recipe links:
         raise RuntimeError("OpenAI API returned no text output.")
     return text
 
-# --------- the email part 
-
-
+# the email part 
+# again your .cmd file will need your email credentials in it
 def send_email(body: str) -> None:
     email_user = os.getenv("EMAIL_USER", "").strip()
     email_pass = os.getenv("EMAIL_PASS", "").strip()
@@ -248,7 +243,7 @@ def send_email(body: str) -> None:
         server.login(email_user, email_pass)
         server.send_message(msg)
 
-# -------------------- main (running program)
+# main (running program)
 
 
 def main() -> int:
