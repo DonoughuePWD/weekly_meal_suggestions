@@ -43,9 +43,8 @@ from urllib.parse import urlparse
 import requests
 from bs4 import BeautifulSoup
 
-# --------------------------
-# URL list + filtering
-# --------------------------
+# -------------------------- URL list + filtering
+
 
 DEFAULT_URLS: List[str] = [
     # Optional fallback list if you don't want to use recipes.txt.
@@ -95,9 +94,8 @@ def load_recipe_urls() -> List[str]:
             seen.add(u)
     return out
 
-# --------------------------
-# Fetch page titles (helps the LLM)
-# --------------------------
+# ------------- Fetch page titles (helps the LLM)
+
 
 @dataclass
 class LinkMeta:
@@ -127,9 +125,7 @@ def build_link_metas(urls: List[str], max_to_fetch: int = 60) -> List[LinkMeta]:
         metas.append(LinkMeta(url=u, title=""))
     return metas
 
-# --------------------------
-# OpenAI Responses API call
-# --------------------------
+# -------------------------- ----API call (using Open AI)
 
 def call_openai_suggestions(link_metas: List[LinkMeta], meals_per_week: int) -> str:
     api_key = os.getenv("OPENAI_API_KEY", "").strip()
@@ -221,9 +217,8 @@ Recipe links:
         raise RuntimeError("OpenAI API returned no text output.")
     return text
 
-# --------------------------
-# Email
-# --------------------------
+# --------- the email part 
+
 
 def send_email(body: str) -> None:
     email_user = os.getenv("EMAIL_USER", "").strip()
@@ -253,9 +248,8 @@ def send_email(body: str) -> None:
         server.login(email_user, email_pass)
         server.send_message(msg)
 
-# --------------------------
-# Main
-# --------------------------
+# -------------------- main (running program)
+
 
 def main() -> int:
     urls = load_recipe_urls()
