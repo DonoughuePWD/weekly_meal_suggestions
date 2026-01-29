@@ -22,5 +22,14 @@ FYI:
 
 Secrets (email password, OpenAI API key) are provided via environment variables so they are not in the repo. You'll need to set up a .cmd file with global variables (e.g. your email, recipient's email, OpenAI API key etc).
 
+**If you don't care for the technical details and just want to use it:**
+
+-- create a recipes.txt file in a folder and chuck your fave URLs in
+-- create a .cmd file in a folder and fill in the env variables (e.g. API key, email, password etc)
+-- put those two files and the weekly_meal_plan_llm_v2.py in the same place
+-- download the latest version of Python
+-- Use Task Scheduler (on Windows) or a similar automation tool to grab your script and .cmd file and run them on a weekly schedule
+-- no longer be stuck on what to cook! 
+
 
 
