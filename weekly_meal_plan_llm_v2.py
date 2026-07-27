@@ -121,7 +121,7 @@ def build_link_metas(urls: List[str], max_to_fetch: int = 60) -> List[LinkMeta]:
     return metas
 
 # API call (using Open AI but you could change provider if you like)
-# you'll need to have your key in a .cdm file in your env for this to work
+# you'll need to have your key in a .cdm file in your env or in the secrets part of GitHub for this to work
 def call_openai_suggestions(link_metas: List[LinkMeta], meals_per_week: int) -> str:
     api_key = os.getenv("OPENAI_API_KEY", "").strip()
     if not api_key:
@@ -147,7 +147,9 @@ def call_openai_suggestions(link_metas: List[LinkMeta], meals_per_week: int) -> 
     prompt = f"""
 You are helping a household with dinner ideas. You will be given a curated list of recipe links (titles included when available).
 
-Produce:
+Firstly, write a short love haiku about a lady named Lizzie with "mousy-brown" hair. 
+
+Then, produce:
 
 1) Seven *suggestions* for dinners (exactly {meals_per_week}).
    For each suggestion:
