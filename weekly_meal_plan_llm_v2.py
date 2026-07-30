@@ -26,6 +26,7 @@ Config (env vars)
 
 from __future__ import annotations
 
+import random
 import os
 import json
 import time
@@ -90,6 +91,8 @@ def load_recipe_urls() -> List[str]:
             out.append(u)
             seen.add(u)
     return out
+  
+  
 
 #  Fetch page titles (helps the model figure out what the thing is)
 @dataclass
@@ -147,7 +150,7 @@ def call_openai_suggestions(link_metas: List[LinkMeta], meals_per_week: int) -> 
     prompt = f"""
 You are helping a household with dinner ideas. You will be given a curated list of recipe links (titles included when available).
 
-Firstly, write a short love haiku about a lady named Lizzie with "mousy-brown" hair. 
+Firstly, write a short love haiku about a lady named Lizzie with "mousy-brown" hair. Use obscure and unusual words; try to sound really smart. 
 
 Then, produce:
 
@@ -159,6 +162,7 @@ Then, produce:
 
 Rules:
 - Choose from the provided links ONLY (do not invent URLs).
+- Avoid selecting recipes that are obvious crowd favourites. Prefer variety. If several recipes are similarly suitable, favour less frequently chosen ones.
 - Avoid desserts/sweets and avoid non-recipe pages.
 - Keep the tone casual and framed as suggestions (not a strict day-by-day plan).
 
@@ -194,7 +198,7 @@ Recipe links:
     payload = {
         "model": model,
         "input": [{"role": "user", "content": prompt}],
-        "temperature": 0.4,
+        "temperature": 0.6,
     }
 
     resp = requests.post(url, headers=headers, data=json.dumps(payload), timeout=60)
@@ -250,6 +254,9 @@ def send_email(body: str) -> None:
 
 def main() -> int:
     urls = load_recipe_urls()
+    random.shuffle(urls)
+    # Only show the model a random subset each week
+    urls = urls[:25]
     if not urls:
         print("No recipe URLs found. Add URLs to recipes.txt (one per line) or DEFAULT_URLS in the script.")
         return 2
