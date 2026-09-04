@@ -6,7 +6,7 @@ on:
 
   # Runs every Friday at 8:17 am Melbourne time
   schedule:
-    - cron: "17 8 * * 5"
+    - cron: "17 8 * * 3"
       timezone: "Australia/Melbourne"
 
 jobs:
